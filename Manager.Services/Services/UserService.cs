@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using EscNet.Cryptography.Interfaces;
 using Manager.Core.Exceptions;
 using Manager.Domain.Entities;
 using Manager.Infra.Interfaces;
@@ -14,11 +15,15 @@ namespace Manager.Services.Services
     {
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
+        private readonly IRijndaelCryptography _rijndaelCryptography;
 
-        public UserService(IMapper mapper, IUserRepository userRepository)
+        public UserService(IMapper mapper, 
+            IUserRepository userRepository, 
+            IRijndaelCryptography rijndaelCryptography)
         {
             _mapper = mapper;
             _userRepository = userRepository;
+            _rijndaelCryptography = rijndaelCryptography;
         }
 
         public async Task<UserDTO> Create(UserDTO userDTO)
@@ -30,6 +35,7 @@ namespace Manager.Services.Services
 
             var user = _mapper.Map<User>(userDTO);
             user.Validate();
+            user.changePassword(_rijndaelCryptography.Encrypt(user.Password));
 
             var userCreated = await _userRepository.Create(user);
 
@@ -46,6 +52,7 @@ namespace Manager.Services.Services
             var user = _mapper.Map<User>(userDTO);
 
             user.Validate();
+            user.changePassword(_rijndaelCryptography.Encrypt(user.Password));
 
             var userUpdate = await _userRepository.Update(user);
 
